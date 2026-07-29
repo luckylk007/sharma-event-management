@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  name      String
+  email     String    @unique
+  password  String
+  role      String    @default("admin")
+  avatar    String?
+  isActive  Boolean   @default(true)
+  lastLogin DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Service {
+  id                 String   @id @default(cuid())
+  title              String
+  slug               String   @unique
+  shortDescription   String   @db.Text
+  overview           String   @db.LongText
+  banner             Json
+  includedServices   Json
+  gallery            Json
+  faqs               Json
+  packages           Json
+  icon               String   @default("FaRing")
+  order              Int      @default(0)
+  isPublished        Boolean  @default(true)
+  seo                Json
+  relatedServiceIds  Json
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([isPublished, order])
+  @@map("services")
+}
+
+model Blog {
+  id              String    @id @default(cuid())
+  title           String
+  slug            String    @unique
+  excerpt         String    @db.Text
+  content         String    @db.LongText
+  featuredImage   Json
+  category        String
+  tags            Json
+  author          Json
+  readingTime     Int       @default(5)
+  views           Int       @default(0)
+  isFeatured      Boolean   @default(false)
+  isPublished     Boolean   @default(false)
+  publishedAt     DateTime?
+  faqs            Json
+  seo             Json
+  relatedPostIds  Json
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([category, isPublished])
+  @@index([isPublished, publishedAt])
+  @@map("blogs")
+}
+
+model GalleryItem {
+  id         String   @id @default(cuid())
+  image      Json
+  category   String
+  title      String
+  isFeatured Boolean  @default(false)
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([category, order])
+  @@index([isFeatured])
+  @@map("gallery_items")
+}
+
+model Contact {
+  id        String    @id @default(cuid())
+  name      String
+  email     String
+  phone     String
+  subject   String
+  message   String    @db.Text
+  service   String?
+  eventDate DateTime?
+  status    String    @default("new")
+  source    String    @default("contact-form")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([status, createdAt])
+  @@map("contacts")
+}
+
+model Testimonial {
+  id          String   @id @default(cuid())
+  name        String
+  role        String
+  content     String   @db.Text
+  rating      Int      @default(5)
+  avatar      Json?
+  eventType   String
+  isPublished Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isPublished, order])
+  @@map("testimonials")
+}
+
+model Newsletter {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  isActive     Boolean  @default(true)
+  subscribedAt DateTime @default(now())
+
+  @@map("newsletters")
+}
+
+model Settings {
+  id                    String   @id @default(cuid())
+  companyName           String   @default("Sharma Event Management")
+  tagline               String   @default("Crafting Unforgettable Moments in Uttarakhand")
+  logo                  String   @default("/logo.svg")
+  logoDark              String   @default("/logo-dark.svg")
+  favicon               String   @default("/favicon.ico")
+  email                 String   @default("hello@sharmaevents.com")
+  phone                 String   @default("+91 98765 43210")
+  whatsapp              String   @default("+919876543210")
+  address               Json
+  businessHours         Json
+  socialLinks           Json
+  mapEmbedUrl           String   @db.Text
+  googleAnalyticsId     String?
+  googleSearchConsoleId String?
+  smtp                  Json
+  seoDefaults           Json
+  about                 Json
+  home                  Json
+  privacyPolicy         String   @db.LongText
+  termsConditions       String   @db.LongText
+  newsletterEnabled     Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("settings")
+}
