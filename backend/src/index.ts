@@ -99,10 +99,15 @@ app.use(notFound);
 app.use(errorHandler);
 
 const start = async () => {
-  await connectDB();
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
-  });
+  try {
+    await connectDB();
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
 };
 
 start();

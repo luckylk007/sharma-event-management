@@ -15,7 +15,7 @@
     "install:all": "npm install --prefix backend --include=dev && npm install --prefix frontend --include=dev",
     "postinstall": "npm run install:all && npm run build",
     "build": "npm run build --prefix frontend && npm run build --prefix backend",
-    "start": "node server.js",
+    "start": "npm run prisma:migrate --prefix backend && node server.js",
     "seed": "npm run seed --prefix backend"
   },
   "devDependencies": {
