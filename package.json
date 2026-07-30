@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "description": "Premium Event Management Platform - Sharma Events, Haldwani",
+  "type": "module",
+  "main": "server.js",
   "engines": {
     "node": ">=20"
   },
@@ -13,7 +15,7 @@
     "install:all": "npm install --prefix backend --include=dev && npm install --prefix frontend --include=dev",
     "postinstall": "npm run install:all && npm run build",
     "build": "npm run build --prefix frontend && npm run build --prefix backend",
-    "start": "node backend/dist/index.js",
+    "start": "node server.js",
     "seed": "npm run seed --prefix backend"
   },
   "devDependencies": {
