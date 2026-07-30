@@ -18,6 +18,21 @@ export function resolveDatabaseUrl(): string | undefined {
   return undefined;
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((err) => {
+        clearTimeout(timer);
+        reject(err);
+      });
+  });
+}
+
 export const connectDB = async (): Promise<boolean> => {
   const databaseUrl = resolveDatabaseUrl();
   if (!databaseUrl) {
@@ -27,29 +42,25 @@ export const connectDB = async (): Promise<boolean> => {
     return false;
   }
 
-  process.env.DATABASE_URL = databaseUrl;
-  const safeHost = databaseUrl.replace(/:[^:@/]+@/, ':****@');
+  // Ensure URL has a short connect timeout for Hostinger (avoid nginx 504)
+  const separator = databaseUrl.includes('?') ? '&' : '?';
+  const timedUrl = databaseUrl.includes('connect_timeout')
+    ? databaseUrl
+    : `${databaseUrl}${separator}connect_timeout=5`;
+
+  process.env.DATABASE_URL = timedUrl;
+  const safeHost = timedUrl.replace(/:[^:@/]+@/, ':****@');
   console.log(`Connecting to MySQL: ${safeHost}`);
 
-  const maxAttempts = 5;
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      await prisma.$connect();
-      await prisma.$queryRaw`SELECT 1`;
-      console.log('MySQL Connected via Prisma');
-      return true;
-    } catch (error) {
-      console.error(`MySQL connection attempt ${attempt}/${maxAttempts} failed:`, error);
-      if (attempt < maxAttempts) {
-        await new Promise((r) => setTimeout(r, 2000 * attempt));
-      }
-    }
+  try {
+    await withTimeout(prisma.$connect(), 8000, 'prisma.$connect');
+    await withTimeout(prisma.$queryRaw`SELECT 1`, 5000, 'prisma ping');
+    console.log('MySQL Connected via Prisma');
+    return true;
+  } catch (error) {
+    console.error('MySQL connection failed:', error);
+    return false;
   }
-
-  console.error(
-    'MySQL still unreachable after retries. Server will start anyway so Hostinger does not show 503; API routes that need DB will fail until credentials/host are fixed.'
-  );
-  return false;
 };
 
 export const disconnectDB = async (): Promise<void> => {

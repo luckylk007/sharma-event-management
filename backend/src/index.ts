@@ -70,14 +70,18 @@ app.use('/api', apiLimiter);
 app.get('/api/health', async (_req, res) => {
   let database: 'up' | 'down' = 'down';
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    await Promise.race([
+      prisma.$queryRaw`SELECT 1`,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('db ping timeout')), 2000)),
+    ]);
     database = 'up';
   } catch {
     database = 'down';
   }
 
-  res.status(database === 'up' ? 200 : 503).json({
-    success: database === 'up',
+  // Always 200 so nginx/proxy health checks don't flap; report DB separately
+  res.status(200).json({
+    success: true,
     message: 'Sharma Events API is running',
     database,
     timestamp: new Date(),
@@ -114,11 +118,19 @@ app.use(errorHandler);
 
 const start = async () => {
   try {
-    const dbOk = await connectDB();
+    // Listen FIRST so Hostinger/nginx get a response immediately (avoids 504).
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
-      console.log(`Database status: ${dbOk ? 'connected' : 'NOT connected'}`);
     });
+
+    // Connect DB in the background after the port is open
+    connectDB()
+      .then((dbOk) => {
+        console.log(`Database status: ${dbOk ? 'connected' : 'NOT connected'}`);
+      })
+      .catch((error) => {
+        console.error('Background DB connect error:', error);
+      });
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);
