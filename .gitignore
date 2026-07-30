@@ -2,6 +2,7 @@ node_modules/
 dist/
 .env
 .env.hostinger
+hostinger.env
 *.log
 .DS_Store
 coverage/
