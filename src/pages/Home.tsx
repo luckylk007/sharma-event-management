@@ -22,6 +22,7 @@ import { Counter } from '@/components/common/Counter';
 import { FAQAccordion } from '@/components/common/FAQAccordion';
 import { Lightbox } from '@/components/common/Lightbox';
 import { Reveal, RevealGroup } from '@/components/common/Reveal';
+import { ScrollSequence } from '@/components/home/ScrollSequence';
 import { fadeUp, reveal, scaleIn, slideInLeft, slideInRight } from '@/animations/variants';
 import { getFaIcon } from '@/utils/iconMap';
 import { SITE, DEFAULT_MAP_EMBED } from '@/constants';
@@ -184,6 +185,9 @@ export default function Home() {
           </span>
         </motion.div>
       </section>
+
+      {/* ---------------- SCROLL SEQUENCE ---------------- */}
+      <ScrollSequence />
 
       {/* ---------------- ABOUT PREVIEW ---------------- */}
       <section className="py-24 sm:py-32">

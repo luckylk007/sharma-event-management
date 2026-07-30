@@ -49,7 +49,7 @@ export const IMAGES = {
     evening: local('mata-jagrata-hero.png'),
   },
   pages: {
-    homeHero: local('indian-wedding-mandap.png'),
+    homeHero: local('mata-jagrata-hero.png'),
     aboutHero: local('indian-wedding-henna.png'),
     aboutStory: local('indian-wedding-couple.png'),
     servicesHero: local('indian-wedding-courtyard.png'),
