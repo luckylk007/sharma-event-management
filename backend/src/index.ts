@@ -12,6 +12,7 @@ import dotenv from 'dotenv';
 import { connectDB } from './config/db.js';
 import { configureCloudinary } from './config/cloudinary.js';
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
+import { prisma } from './lib/prisma.js';
 
 import authRoutes from './routes/authRoutes.js';
 import serviceRoutes from './routes/serviceRoutes.js';
@@ -66,8 +67,21 @@ const apiLimiter = rateLimit({
 
 app.use('/api', apiLimiter);
 
-app.get('/api/health', (_req, res) => {
-  res.json({ success: true, message: 'Sharma Events API is running', timestamp: new Date() });
+app.get('/api/health', async (_req, res) => {
+  let database: 'up' | 'down' = 'down';
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    database = 'up';
+  } catch {
+    database = 'down';
+  }
+
+  res.status(database === 'up' ? 200 : 503).json({
+    success: database === 'up',
+    message: 'Sharma Events API is running',
+    database,
+    timestamp: new Date(),
+  });
 });
 
 app.use('/api/auth', authRoutes);
@@ -100,9 +114,10 @@ app.use(errorHandler);
 
 const start = async () => {
   try {
-    await connectDB();
+    const dbOk = await connectDB();
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+      console.log(`Database status: ${dbOk ? 'connected' : 'NOT connected'}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

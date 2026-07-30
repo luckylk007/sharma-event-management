@@ -1,6 +1,6 @@
 import { prisma } from '../lib/prisma.js';
 
-function resolveDatabaseUrl(): string | undefined {
+export function resolveDatabaseUrl(): string | undefined {
   if (process.env.DATABASE_URL?.trim()) {
     return process.env.DATABASE_URL.trim();
   }
@@ -12,38 +12,44 @@ function resolveDatabaseUrl(): string | undefined {
   const name = process.env.DB_NAME || process.env.MYSQL_DATABASE;
 
   if (user && password && name) {
-    const encodedPassword = encodeURIComponent(password);
-    return `mysql://${user}:${encodedPassword}@${host}:${port}/${name}`;
+    return `mysql://${user}:${encodeURIComponent(password)}@${host}:${port}/${name}`;
   }
 
   return undefined;
 }
 
-export const connectDB = async (): Promise<void> => {
+export const connectDB = async (): Promise<boolean> => {
   const databaseUrl = resolveDatabaseUrl();
   if (!databaseUrl) {
     console.error(
-      'DATABASE_URL is missing. Set DATABASE_URL, or DB_USER + DB_PASSWORD + DB_NAME in environment variables.'
+      'DATABASE_URL is missing. Set DATABASE_URL, or DB_USER + DB_PASSWORD + DB_NAME.'
     );
-    process.exit(1);
+    return false;
   }
 
-  // Prisma reads DATABASE_URL from env
   process.env.DATABASE_URL = databaseUrl;
+  const safeHost = databaseUrl.replace(/:[^:@/]+@/, ':****@');
+  console.log(`Connecting to MySQL: ${safeHost}`);
 
-  try {
-    const safeHost = databaseUrl.replace(/:[^:@/]+@/, ':****@');
-    console.log(`Connecting to MySQL: ${safeHost}`);
-    await prisma.$connect();
-    await prisma.$queryRaw`SELECT 1`;
-    console.log('MySQL Connected via Prisma');
-  } catch (error) {
-    console.error('MySQL connection error:', error);
-    console.error(
-      'Check Hostinger MySQL credentials. Prefer DB_USER / DB_PASSWORD / DB_NAME if the password has special characters.'
-    );
-    process.exit(1);
+  const maxAttempts = 5;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await prisma.$connect();
+      await prisma.$queryRaw`SELECT 1`;
+      console.log('MySQL Connected via Prisma');
+      return true;
+    } catch (error) {
+      console.error(`MySQL connection attempt ${attempt}/${maxAttempts} failed:`, error);
+      if (attempt < maxAttempts) {
+        await new Promise((r) => setTimeout(r, 2000 * attempt));
+      }
+    }
   }
+
+  console.error(
+    'MySQL still unreachable after retries. Server will start anyway so Hostinger does not show 503; API routes that need DB will fail until credentials/host are fixed.'
+  );
+  return false;
 };
 
 export const disconnectDB = async (): Promise<void> => {

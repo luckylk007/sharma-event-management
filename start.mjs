@@ -1,13 +1,18 @@
 #!/usr/bin/env node
 /**
- * Ensures DATABASE_URL exists for Prisma CLI (migrate) when only DB_* vars are set.
+ * Hostinger start entry:
+ * 1) Build DATABASE_URL from DB_* if needed
+ * 2) Best-effort schema sync (never block boot on failure)
+ * 3) Always start the Express server
  */
 import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname);
+const backendDir = path.join(root, 'backend');
 
 function buildDatabaseUrl() {
   if (process.env.DATABASE_URL?.trim()) {
@@ -21,45 +26,57 @@ function buildDatabaseUrl() {
   const name = process.env.DB_NAME || process.env.MYSQL_DATABASE;
 
   if (!user || !password || !name) {
-    console.error('Missing DATABASE_URL or DB_USER/DB_PASSWORD/DB_NAME');
-    process.exit(1);
+    return null;
   }
 
   return `mysql://${user}:${encodeURIComponent(password)}@${host}:${port}/${name}`;
 }
 
-process.env.DATABASE_URL = buildDatabaseUrl();
+const databaseUrl = buildDatabaseUrl();
+if (databaseUrl) {
+  process.env.DATABASE_URL = databaseUrl;
+  console.log('[start] DATABASE_URL ready');
+} else {
+  console.warn('[start] DATABASE_URL / DB_* not set — server will still start and log DB errors');
+}
 
-console.log('[start] Running prisma migrate deploy...');
-const migrate = spawnSync(
-  process.platform === 'win32' ? 'npx.cmd' : 'npx',
-  ['prisma', 'migrate', 'deploy'],
-  {
-    cwd: path.join(root, 'backend'),
-    env: process.env,
-    stdio: 'inherit',
-  }
-);
-
-if (migrate.status !== 0) {
-  console.error('[start] prisma migrate deploy failed — trying db push...');
-  const push = spawnSync(
-    process.platform === 'win32' ? 'npx.cmd' : 'npx',
-    ['prisma', 'db', 'push'],
-    {
-      cwd: path.join(root, 'backend'),
+function runPrisma(args) {
+  const localBin = path.join(backendDir, 'node_modules', 'prisma', 'build', 'index.js');
+  if (fs.existsSync(localBin)) {
+    return spawnSync(process.execPath, [localBin, ...args], {
+      cwd: backendDir,
       env: process.env,
       stdio: 'inherit',
+    });
+  }
+
+  return spawnSync(process.platform === 'win32' ? 'npx.cmd' : 'npx', ['prisma', ...args], {
+    cwd: backendDir,
+    env: process.env,
+    stdio: 'inherit',
+  });
+}
+
+if (process.env.DATABASE_URL) {
+  console.log('[start] Running prisma migrate deploy (best effort)...');
+  const migrate = runPrisma(['migrate', 'deploy']);
+  if (migrate.status !== 0) {
+    console.warn('[start] migrate deploy failed — trying db push (best effort)...');
+    const push = runPrisma(['db', 'push', '--accept-data-loss=false']);
+    if (push.status !== 0) {
+      console.warn('[start] schema sync failed — continuing to start server anyway');
     }
-  );
-  if (push.status !== 0) {
-    console.error('[start] Database schema sync failed');
-    process.exit(push.status || 1);
   }
 }
 
-console.log('[start] Starting server...');
-const server = spawnSync(process.execPath, [path.join(root, 'server.js')], {
+const entry = path.join(backendDir, 'dist', 'index.js');
+if (!fs.existsSync(entry)) {
+  console.error('[start] Missing backend/dist/index.js — build did not produce the backend');
+  process.exit(1);
+}
+
+console.log('[start] Starting Express on PORT=', process.env.PORT || '5000');
+const server = spawnSync(process.execPath, [entry], {
   cwd: root,
   env: process.env,
   stdio: 'inherit',

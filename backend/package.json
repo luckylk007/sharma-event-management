@@ -36,6 +36,7 @@
     "morgan": "^1.11.0",
     "multer": "^2.2.0",
     "nodemailer": "^9.0.3",
+    "prisma": "^6.19.3",
     "slugify": "^1.6.9"
   },
   "devDependencies": {
@@ -49,7 +50,6 @@
     "@types/multer": "^2.2.0",
     "@types/node": "^26.1.1",
     "@types/nodemailer": "^8.0.1",
-    "prisma": "^6.19.3",
     "tsx": "^4.23.1",
     "typescript": "^7.0.2"
   }

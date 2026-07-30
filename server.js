@@ -1,6 +1,5 @@
 /**
- * Hostinger Express preset entrypoint.
- * Delegates to the compiled backend (which also serves the frontend in production).
+ * Hostinger Express entry — start the compiled backend directly.
  */
 console.log('[boot] starting Sharma Events...');
 console.log('[boot] NODE_ENV=', process.env.NODE_ENV || 'undefined');
