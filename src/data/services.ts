@@ -431,13 +431,10 @@ const baseServices = [
       'Power Backup Arrangement',
       'Complete Night-Long Event Coordination',
     ],
-    gallery: [
-      { url: IMAGES.jagrata.altar, alt: 'Diya and floral decoration' },
-      { url: IMAGES.jagrata.diyas, alt: 'Traditional puja setup' },
-      { url: IMAGES.jagrata.lights, alt: 'Devotional evening ceremony' },
-      { url: IMAGES.jagrata.flowers, alt: 'Temple lights decoration' },
-      { url: IMAGES.jagrata.evening, alt: 'Night event tent seating setup' },
-    ],
+    gallery: IMAGES.posters.map((url, i) => ({
+      url,
+      alt: `Mata Ka Jagrata poster ${i + 1}`,
+    })),
     faqs: [
       {
         question: 'How far in advance should I book a bhajan mandali?',

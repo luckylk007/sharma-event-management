@@ -200,10 +200,7 @@ export default function Home() {
             className="relative aspect-[4/5] w-full overflow-hidden"
           >
             <OptimizedImage
-              src={
-                settings?.about.team?.[0]?.image ||
-                IMAGES.pages.aboutStory
-              }
+              src={IMAGES.pages.aboutStory}
               alt={companyName}
               wrapperClassName="h-full w-full"
             />

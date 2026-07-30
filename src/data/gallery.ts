@@ -3,6 +3,22 @@ import type { GalleryItem } from '@/types';
 
 const now = '2026-01-01T00:00:00.000Z';
 
+const posterGallery: GalleryItem[] = IMAGES.posters.map((url, i) => ({
+  _id: `gal-poster-${i + 1}`,
+  image: {
+    url,
+    alt: `Mata Ka Jagrata event poster ${i + 1}`,
+    width: 3,
+    height: 4,
+  },
+  category: 'Mata Ka Jagrata' as const,
+  title: `Jagrata Poster ${i + 1}`,
+  isFeatured: i < 4,
+  order: i + 1,
+  createdAt: now,
+  updatedAt: now,
+}));
+
 export const staticGallery: GalleryItem[] = [
   { _id: 'gal-1', image: { url: IMAGES.wedding.mandap, alt: 'Wedding mandap floral decor' }, category: 'Wedding', title: 'Floral Wedding Mandap', isFeatured: true, order: 1, createdAt: now, updatedAt: now },
   { _id: 'gal-2', image: { url: IMAGES.wedding.couple, alt: 'Bride and groom ceremony' }, category: 'Wedding', title: 'Wedding Ceremony Moments', isFeatured: true, order: 2, createdAt: now, updatedAt: now },
@@ -24,9 +40,5 @@ export const staticGallery: GalleryItem[] = [
   { _id: 'gal-18', image: { url: IMAGES.kitty.decor, alt: 'Festive Indian kitty party decor' }, category: 'Kitty Party', title: 'Festive Kitty Decor', isFeatured: false, order: 3, createdAt: now, updatedAt: now },
   { _id: 'gal-19', image: { url: IMAGES.kitty.gathering, alt: 'Indian ladies kitty gathering' }, category: 'Kitty Party', title: 'Kitty Party Gathering', isFeatured: false, order: 4, createdAt: now, updatedAt: now },
   { _id: 'gal-20', image: { url: IMAGES.kitty.festive, alt: 'Colorful Indian kitty party setup' }, category: 'Kitty Party', title: 'Colorful Kitty Setup', isFeatured: false, order: 5, createdAt: now, updatedAt: now },
-  { _id: 'gal-21', image: { url: IMAGES.jagrata.hero, alt: 'Mata Ka Jagrata night celebration' }, category: 'Mata Ka Jagrata', title: 'Deity Decor & Diyas', isFeatured: true, order: 1, createdAt: now, updatedAt: now },
-  { _id: 'gal-22', image: { url: IMAGES.jagrata.altar, alt: 'Traditional Mata altar decoration' }, category: 'Mata Ka Jagrata', title: 'Traditional Puja Setup', isFeatured: false, order: 2, createdAt: now, updatedAt: now },
-  { _id: 'gal-23', image: { url: IMAGES.jagrata.diyas, alt: 'Brass diyas for Jagrata' }, category: 'Mata Ka Jagrata', title: 'Devotional Evening', isFeatured: false, order: 3, createdAt: now, updatedAt: now },
-  { _id: 'gal-24', image: { url: IMAGES.jagrata.lights, alt: 'Jagrata night seating with lights' }, category: 'Mata Ka Jagrata', title: 'Temple Style Lighting', isFeatured: false, order: 4, createdAt: now, updatedAt: now },
-  { _id: 'gal-25', image: { url: IMAGES.jagrata.flowers, alt: 'Floral Mata altar for Jagrata' }, category: 'Mata Ka Jagrata', title: 'Jagrata Altar Flowers', isFeatured: false, order: 5, createdAt: now, updatedAt: now },
+  ...posterGallery,
 ];

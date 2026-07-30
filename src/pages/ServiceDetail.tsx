@@ -2,6 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiArrowRight, FiArrowUpRight, FiCheck } from 'react-icons/fi';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, Navigation, Pagination } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 
 import { servicesApi } from '@/api';
 import type { Service } from '@/types';
@@ -26,6 +31,7 @@ import { Reveal, RevealGroup } from '@/components/common/Reveal';
 import { fadeUp, scaleIn } from '@/animations/variants';
 import { getFaIcon } from '@/utils/iconMap';
 import { SITE } from '@/constants';
+import { cn } from '@/utils/cn';
 
 function isPopulatedService(item: Service | string): item is Service {
   return typeof item !== 'string';
@@ -86,7 +92,10 @@ export default function ServiceDetail() {
   }
 
   const relatedServices = (service.relatedServices || []).filter(isPopulatedService);
-  const galleryImages = [service.banner, ...service.gallery].map((media) => ({
+  const isJagrata = service.slug === 'mata-ka-jagrata';
+  const galleryImages = (
+    isJagrata ? service.gallery : [service.banner, ...service.gallery]
+  ).map((media) => ({
     url: media.url,
     alt: media.alt,
     caption: media.caption,
@@ -258,30 +267,84 @@ export default function ServiceDetail() {
         <section className="py-24 sm:py-32">
           <div className="container-custom">
             <SectionHeading
-              eyebrow="Gallery"
-              title={`${service.title} in Action`}
-              description="A closer look at moments from events we've styled and executed."
+              eyebrow={isJagrata ? 'Posters' : 'Gallery'}
+              title={
+                isJagrata
+                  ? 'Mata Ka Jagrata Posters'
+                  : `${service.title} in Action`
+              }
+              description={
+                isJagrata
+                  ? 'A carousel of our Jagrata event posters and invitations.'
+                  : "A closer look at moments from events we've styled and executed."
+              }
             />
-            <RevealGroup
-              className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
-              stagger={0.06}
-            >
-              {galleryImages.map((img, idx) => (
-                <motion.button
-                  key={idx}
-                  variants={scaleIn}
-                  onClick={() => setLightboxIndex(idx)}
-                  className="group relative aspect-square w-full overflow-hidden"
+
+            {isJagrata ? (
+              <div className="relative mt-16">
+                <Swiper
+                  modules={[Autoplay, Navigation, Pagination]}
+                  slidesPerView={1.15}
+                  spaceBetween={16}
+                  centeredSlides
+                  loop={galleryImages.length > 2}
+                  autoplay={{ delay: 3500, disableOnInteraction: false }}
+                  navigation
+                  pagination={{ clickable: true }}
+                  breakpoints={{
+                    640: { slidesPerView: 2.1, spaceBetween: 20, centeredSlides: false },
+                    1024: { slidesPerView: 3.2, spaceBetween: 24, centeredSlides: false },
+                    1280: { slidesPerView: 4, spaceBetween: 24, centeredSlides: false },
+                  }}
+                  className={cn(
+                    'jagrata-poster-swiper !pb-12',
+                    '[&_.swiper-button-next]:text-[var(--color-gold)]',
+                    '[&_.swiper-button-prev]:text-[var(--color-gold)]',
+                    '[&_.swiper-pagination-bullet]:bg-[var(--color-muted)]',
+                    '[&_.swiper-pagination-bullet-active]:bg-[var(--color-gold)]'
+                  )}
                 >
-                  <OptimizedImage
-                    src={img.url}
-                    alt={img.alt}
-                    wrapperClassName="h-full w-full"
-                    className="transition-transform duration-700 group-hover:scale-110"
-                  />
-                </motion.button>
-              ))}
-            </RevealGroup>
+                  {galleryImages.map((img, idx) => (
+                    <SwiperSlide key={`${img.url}-${idx}`}>
+                      <button
+                        type="button"
+                        onClick={() => setLightboxIndex(idx)}
+                        className="group block w-full overflow-hidden"
+                      >
+                        <OptimizedImage
+                          src={img.url}
+                          alt={img.alt}
+                          aspectRatio="3 / 4"
+                          wrapperClassName="w-full"
+                          className="transition-transform duration-700 group-hover:scale-105"
+                        />
+                      </button>
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+              </div>
+            ) : (
+              <RevealGroup
+                className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4"
+                stagger={0.06}
+              >
+                {galleryImages.map((img, idx) => (
+                  <motion.button
+                    key={idx}
+                    variants={scaleIn}
+                    onClick={() => setLightboxIndex(idx)}
+                    className="group relative aspect-square w-full overflow-hidden"
+                  >
+                    <OptimizedImage
+                      src={img.url}
+                      alt={img.alt}
+                      wrapperClassName="h-full w-full"
+                      className="transition-transform duration-700 group-hover:scale-110"
+                    />
+                  </motion.button>
+                ))}
+              </RevealGroup>
+            )}
           </div>
         </section>
       )}
