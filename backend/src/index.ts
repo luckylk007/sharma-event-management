@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -33,8 +34,14 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
-const isProd = process.env.NODE_ENV === 'production';
+const frontendDist = path.resolve(__dirname, '../../frontend/dist');
+const hasFrontend = fs.existsSync(path.join(frontendDist, 'index.html'));
+const isProd = process.env.NODE_ENV === 'production' || hasFrontend;
 const clientUrl = process.env.CLIENT_URL || process.env.SITE_URL || 'http://localhost:5173';
+
+if (!process.env.NODE_ENV && hasFrontend) {
+  process.env.NODE_ENV = 'production';
+}
 
 configureCloudinary();
 
@@ -48,7 +55,7 @@ app.use(compression());
 app.use(
   cors({
     origin: isProd
-      ? ([clientUrl, process.env.SITE_URL].filter(Boolean) as string[])
+      ? ([clientUrl, process.env.SITE_URL, 'https://sharma.lacebylennox.in'].filter(Boolean) as string[])
       : clientUrl,
     credentials: true,
   })
@@ -79,11 +86,12 @@ app.get('/api/health', async (_req, res) => {
     database = 'down';
   }
 
-  // Always 200 so nginx/proxy health checks don't flap; report DB separately
   res.status(200).json({
     success: true,
     message: 'Sharma Events API is running',
     database,
+    frontend: hasFrontend ? 'found' : 'missing',
+    nodeEnv: process.env.NODE_ENV || null,
     timestamp: new Date(),
   });
 });
@@ -99,9 +107,8 @@ app.use('/api', dashboardRoutes);
 app.get('/sitemap.xml', getSitemap);
 app.get('/robots.txt', getRobots);
 
-// Production: serve Vite frontend from the same Node process (Hostinger Web App)
-if (isProd) {
-  const frontendDist = path.resolve(__dirname, '../../frontend/dist');
+if (hasFrontend) {
+  console.log(`[boot] Serving frontend from ${frontendDist}`);
   app.use(express.static(frontendDist, { index: false, maxAge: '7d' }));
 
   app.get(/^(?!\/api).*/, (req, res, next) => {
@@ -111,6 +118,8 @@ if (isProd) {
       if (err) next(err);
     });
   });
+} else {
+  console.warn(`[boot] frontend/dist/index.html not found at ${frontendDist}`);
 }
 
 app.use(notFound);
@@ -118,12 +127,10 @@ app.use(errorHandler);
 
 const start = async () => {
   try {
-    // Listen FIRST so Hostinger/nginx get a response immediately (avoids 504).
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
     });
 
-    // Connect DB in the background after the port is open
     connectDB()
       .then((dbOk) => {
         console.log(`Database status: ${dbOk ? 'connected' : 'NOT connected'}`);
