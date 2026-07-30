@@ -79,11 +79,11 @@ export function Navbar() {
     setMegaOpen(true);
   }, []);
 
-  const closeMega = useCallback((delay = 140) => {
-    if (megaPinnedRef.current) return;
+  const closeMega = useCallback((delay = 200) => {
     if (megaTimeout.current) clearTimeout(megaTimeout.current);
     megaTimeout.current = setTimeout(() => {
-      if (megaPinnedRef.current) return;
+      megaPinnedRef.current = false;
+      setMegaPinned(false);
       setMegaOpen(false);
     }, delay);
   }, []);
@@ -162,6 +162,7 @@ export function Navbar() {
                     key={link.to}
                     className="relative"
                     onMouseEnter={openMega}
+                    onMouseLeave={() => closeMega(200)}
                   >
                     <button
                       type="button"
@@ -241,7 +242,7 @@ export function Navbar() {
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.35, ease: MEGA_EASE }}
+              transition={{ duration: 0.2, ease: MEGA_EASE }}
               onMouseEnter={openMega}
               onMouseLeave={() => closeMega(200)}
               className="fixed inset-x-0 top-20 z-[60] border-t border-line bg-ink shadow-[0_24px_64px_rgba(0,0,0,0.55)] sm:top-24"

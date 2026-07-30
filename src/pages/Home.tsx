@@ -105,7 +105,7 @@ export default function Home() {
       <JsonLd data={localBusinessSchema()} />
 
       {/* ---------------- HERO ---------------- */}
-      <section className="relative flex h-[100svh] min-h-[640px] w-full items-end overflow-hidden bg-[var(--color-ink)]">
+      <section className="relative flex h-[100svh] min-h-[640px] w-full items-center overflow-hidden bg-[var(--color-ink)]">
         <OptimizedImage
           src={heroImage}
           alt={companyName}
@@ -116,12 +116,12 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-ink)] via-[var(--color-ink)]/65 to-black/70" />
         <div className="absolute inset-0 bg-gradient-to-r from-[var(--color-ink)]/70 via-transparent to-transparent" />
 
-        <div className="container-custom relative z-10 pb-20 pt-40 sm:pb-28">
+        <div className="container-custom relative z-10 w-full pt-24 pb-16 sm:pt-28 sm:pb-20">
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="eyebrow mb-6 flex items-center gap-3"
+            className="eyebrow mb-6 flex items-center gap-3 pt-5 sm:pt-6"
           >
             <span className="h-px w-8 bg-[var(--color-gold)]" />
             {companyName}
