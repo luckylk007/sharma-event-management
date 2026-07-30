@@ -70,14 +70,12 @@ export default function About() {
             <h2 className="font-display text-4xl leading-[1.1] text-[var(--color-cream)] sm:text-5xl">
               Built on Passion, Grown Through Trust
             </h2>
-            <div className="mt-6 space-y-5 text-base leading-relaxed text-[var(--color-muted)] sm:text-lg">
-              {(about?.story || SITE.description)
-                .split(/\n+/)
-                .filter(Boolean)
-                .map((para, idx) => (
-                  <p key={idx}>{para}</p>
-                ))}
-            </div>
+            <div
+              className="mt-6 space-y-5 text-base leading-relaxed text-[var(--color-muted)] sm:text-lg [&_p]:mb-5 [&_p:last-child]:mb-0"
+              dangerouslySetInnerHTML={{
+                __html: about?.story || `<p>${SITE.description}</p>`,
+              }}
+            />
           </Reveal>
           <Reveal
             variants={slideInRight}

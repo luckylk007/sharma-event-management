@@ -6,12 +6,15 @@ export function ScrollToTop() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    const lenis = getLenis();
-    if (lenis) {
-      lenis.scrollTo(0, { immediate: true });
-    } else {
-      window.scrollTo(0, 0);
-    }
+    const id = window.requestAnimationFrame(() => {
+      const lenis = getLenis();
+      if (lenis) {
+        lenis.scrollTo(0, { immediate: true });
+      } else {
+        window.scrollTo(0, 0);
+      }
+    });
+    return () => window.cancelAnimationFrame(id);
   }, [pathname]);
 
   return null;

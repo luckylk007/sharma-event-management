@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 
 import { galleryApi } from '@/api';
+import { staticGallery } from '@/data';
 import type { GalleryCategory, GalleryItem } from '@/types';
 import { SEO } from '@/components/seo/SEO';
 import { JsonLd, breadcrumbSchema } from '@/components/seo/JsonLd';
@@ -16,42 +17,52 @@ import { cn } from '@/utils/cn';
 
 type CategoryFilter = GalleryCategory | 'All';
 
+const PAGE_SIZE = 12;
 const ASPECT_CYCLE = ['4/5', '1/1', '4/3', '3/4', '1/1', '4/5'];
+
+function firstPage(category: CategoryFilter): GalleryItem[] {
+  const filtered =
+    category === 'All' ? staticGallery : staticGallery.filter((g) => g.category === category);
+  return [...filtered]
+    .sort((a, b) => a.order - b.order || b.createdAt.localeCompare(a.createdAt))
+    .slice(0, PAGE_SIZE);
+}
 
 export default function Gallery() {
   const [category, setCategory] = useState<CategoryFilter>('All');
-  const [items, setItems] = useState<GalleryItem[]>([]);
+  const [items, setItems] = useState<GalleryItem[]>(() => firstPage('All'));
   const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(() => staticGallery.length > PAGE_SIZE);
+  const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
 
-  // Reset + fetch first page whenever category changes
+  // Reset + fetch first page whenever category changes (skip first paint — already hydrated)
   useEffect(() => {
     const requestId = ++requestIdRef.current;
-    setIsLoading(true);
-    setItems([]);
+    const initial = firstPage(category);
+    setItems(initial);
     setPage(1);
-    setHasMore(true);
+    setHasMore(
+      (category === 'All'
+        ? staticGallery.length
+        : staticGallery.filter((g) => g.category === category).length) > PAGE_SIZE
+    );
+    setIsLoading(false);
 
     galleryApi
-      .getAll({ page: 1, limit: 12, category: category === 'All' ? undefined : category })
+      .getAll({ page: 1, limit: PAGE_SIZE, category: category === 'All' ? undefined : category })
       .then((res) => {
         if (requestIdRef.current !== requestId) return;
         setItems(res.data);
         setHasMore(!!res.hasMore);
       })
       .catch(() => {
+        // Keep sync-hydrated items if the accessor fails
         if (requestIdRef.current !== requestId) return;
-        setItems([]);
-        setHasMore(false);
-      })
-      .finally(() => {
-        if (requestIdRef.current === requestId) setIsLoading(false);
       });
   }, [category]);
 
@@ -62,7 +73,11 @@ export default function Gallery() {
     setIsLoadingMore(true);
 
     galleryApi
-      .getAll({ page: nextPage, limit: 12, category: category === 'All' ? undefined : category })
+      .getAll({
+        page: nextPage,
+        limit: PAGE_SIZE,
+        category: category === 'All' ? undefined : category,
+      })
       .then((res) => {
         if (requestIdRef.current !== requestId) return;
         setItems((prev) => [...prev, ...res.data]);
@@ -90,11 +105,15 @@ export default function Gallery() {
     return () => observer.disconnect();
   }, [loadMore]);
 
-  const lightboxImages = items.map((item) => ({
-    url: item.image.url,
-    alt: item.image.alt || item.title,
-    caption: `${item.title} — ${item.category}`,
-  }));
+  const lightboxImages = useMemo(
+    () =>
+      items.map((item) => ({
+        url: item.image.url,
+        alt: item.image.alt || item.title,
+        caption: `${item.title} — ${item.category}`,
+      })),
+    [items]
+  );
 
   return (
     <>
@@ -138,6 +157,7 @@ export default function Gallery() {
           {GALLERY_CATEGORIES.map((cat) => (
             <button
               key={cat}
+              type="button"
               onClick={() => setCategory(cat)}
               className={cn(
                 'border px-5 py-2.5 text-xs uppercase tracking-widest transition-all duration-300 sm:text-sm',
@@ -170,10 +190,7 @@ export default function Gallery() {
               No photos found in this category yet — check back soon.
             </p>
           ) : (
-            <motion.div
-              layout
-              className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4"
-            >
+            <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4">
               {items.map((item, idx) => {
                 const aspect =
                   item.image.width && item.image.height
@@ -182,10 +199,10 @@ export default function Gallery() {
                 return (
                   <motion.button
                     key={item._id}
-                    layout
+                    type="button"
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1], delay: Math.min(idx * 0.03, 0.3) }}
                     onClick={() => setLightboxIndex(idx)}
                     className="group relative mb-4 block w-full overflow-hidden break-inside-avoid"
                   >
@@ -205,7 +222,7 @@ export default function Gallery() {
                   </motion.button>
                 );
               })}
-            </motion.div>
+            </div>
           )}
 
           <div ref={sentinelRef} className="mt-4 flex h-16 items-center justify-center">

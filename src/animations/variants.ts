@@ -3,16 +3,16 @@ import type { Variants, Transition } from 'framer-motion';
 export const easePremium: Transition['ease'] = [0.16, 1, 0.3, 1];
 
 export const pageVariants: Variants = {
-  initial: { opacity: 0, y: 16 },
+  initial: { opacity: 0.01, y: 12 },
   animate: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: easePremium },
+    transition: { duration: 0.45, ease: easePremium },
   },
   exit: {
-    opacity: 0,
-    y: -16,
-    transition: { duration: 0.4, ease: easePremium },
+    opacity: 0.01,
+    y: -8,
+    transition: { duration: 0.25, ease: easePremium },
   },
 };
 

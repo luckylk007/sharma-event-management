@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import type { ReactNode } from 'react';
@@ -13,15 +14,21 @@ interface RevealProps {
   once?: boolean;
 }
 
-/** Scroll-triggered reveal wrapper for a single element or block. */
+/** Scroll-triggered reveal — falls back to visible so content never stays hidden. */
 export function Reveal({ children, variants = fadeUp, className, amount, once }: RevealProps) {
   const { ref, isInView } = useScrollReveal<HTMLDivElement>({ amount, once });
+  const [forceVisible, setForceVisible] = useState(false);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setForceVisible(true), 600);
+    return () => window.clearTimeout(id);
+  }, []);
 
   return (
     <motion.div
       ref={ref}
       initial="hidden"
-      animate={isInView ? 'visible' : 'hidden'}
+      animate={isInView || forceVisible ? 'visible' : 'hidden'}
       variants={variants}
       className={className}
     >
@@ -39,7 +46,7 @@ interface RevealGroupProps {
   once?: boolean;
 }
 
-/** Scroll-triggered stagger container — children should be `motion.*` elements with their own `variants`. */
+/** Scroll-triggered stagger container — children should be `motion.*` with their own `variants`. */
 export function RevealGroup({
   children,
   className,
@@ -49,12 +56,18 @@ export function RevealGroup({
   once,
 }: RevealGroupProps) {
   const { ref, isInView } = useScrollReveal<HTMLDivElement>({ amount, once });
+  const [forceVisible, setForceVisible] = useState(false);
+
+  useEffect(() => {
+    const id = window.setTimeout(() => setForceVisible(true), 600);
+    return () => window.clearTimeout(id);
+  }, []);
 
   return (
     <motion.div
       ref={ref}
       initial="hidden"
-      animate={isInView ? 'visible' : 'hidden'}
+      animate={isInView || forceVisible ? 'visible' : 'hidden'}
       variants={staggerContainer(stagger, delayChildren)}
       className={cn(className)}
     >
